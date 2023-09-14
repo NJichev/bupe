@@ -68,6 +68,7 @@ defmodule BUPE.Parser do
     |> parse_xml(:manifest)
     |> parse_xml(:navigation)
     |> parse_xml(:extras)
+    |> parse_xml(:content)
   end
 
   defp check_file(epub) do
@@ -111,6 +112,9 @@ defmodule BUPE.Parser do
 
   defp scan_content({epub, root_file}) do
     root_file = String.to_charlist(root_file)
+    Process.put(:root_file, root_file)
+    Process.put(:epub, epub)
+
     [{^root_file, content}] = extract_files(epub, [root_file])
 
     {xml, _rest} = content |> :erlang.bitstring_to_list() |> :xmerl_scan.string()
@@ -119,12 +123,12 @@ defmodule BUPE.Parser do
   end
 
   defp parse_xml({xml, config}, :extras) do
-    %{
+    {xml, %{
       config
       | language: find_language(xml),
         version: find_xml(xml, filter: "/package/@version", type: :attribute),
         unique_identifier: find_xml(xml, filter: "/package/@unique-identifier", type: :attribute)
-    }
+    }}
   end
 
   defp parse_xml({xml, config}, :manifest) do
@@ -168,6 +172,11 @@ defmodule BUPE.Parser do
     {xml, %{config | nav: find_xml(xml, filter: "/package/spine/*", type: :element)}}
   end
 
+  defp parse_xml({xml, config}, :content) do
+    content = find_content(xml, config, "application/xhtml+xml")
+    %{config | content: content}
+  end
+
   defp extract_files(archive, files) when is_list(files) do
     file_list = Enum.into(files, [], &if(is_list(&1), do: &1, else: String.to_charlist(&1)))
 
@@ -199,6 +208,23 @@ defmodule BUPE.Parser do
   end
 
   defp find_manifest(xml, media_type), do: find_manifest(xml, [media_type])
+
+  defp find_content(_, config, media_types) when is_list(media_types) do
+    epub = Process.get(:epub)
+    root_file = Process.get(:root_file) |> to_string()
+    [path, _root] = String.split(root_file, "/")
+
+    pages = config.pages
+
+    Enum.map(pages, fn page ->
+      p = String.to_charlist("#{path}/#{page.href}")
+      [{^p, content}] = extract_files(epub, [p])
+      {xml, _rest} = content |> :erlang.bitstring_to_list() |> :xmerl_scan.string()
+      Map.put(page, :content, read(xml))
+    end)
+  end
+
+  defp find_content(xml, config, media_type), do: find_content(xml, config, [media_type])
 
   defp find_xml(xml, filter: filter, type: :attribute),
     do: filter |> xpath_string(xml) |> transform()
@@ -256,4 +282,41 @@ defmodule BUPE.Parser do
   defp transform([], _), do: nil
   defp transform(source, from: :element), do: Enum.map(source, &transform/1)
   defp transform(source, from: :text), do: Enum.map_join(source, ", ", &transform/1)
+
+  defp read({
+         :xmlElement,
+         _name,
+         _expanded_name,
+         _nsinfo,
+         _namespace,
+         _parents,
+         _pos,
+         _,
+         content,
+         _language,
+         _xmlbase,
+         :undeclared
+       }) do
+    read(content, from: :element)
+  end
+
+  defp read({:xmlText, _parents, _pos, _language, value, :text}), do: to_string(value)
+
+  defp read([
+         {
+           :xmlAttribute,
+           _name,
+           _expanded_name,
+           _nsinfo,
+           _namespace,
+           _parents,
+           _pos,
+           _language,
+           _value,
+           _normalized
+         }
+       ]),
+       do: ""
+
+  defp read(source, from: :element), do: Enum.map_join(source, " ", &read/1)
 end

@@ -114,5 +114,6 @@ defmodule BUPE.Config do
             cover: true,
             logo: nil,
             audio: [],
-            fonts: []
+            fonts: [],
+            content: []
 end
