@@ -300,7 +300,16 @@ defmodule BUPE.Parser do
     read(content, from: :element)
   end
 
-  defp read({:xmlText, _parents, _pos, _language, value, :text}), do: to_string(value)
+
+  # Skip the title tag
+  defp read({:xmlText, [{:title, _} | _rest], _, _language, _, :text}), do: ""
+  defp read({:xmlText, [{:p, _} | _rest], _pos, _language, value, :text}) do
+    [to_string(value), "\n"]
+  end
+
+  defp read({:xmlText, _, _pos, _language, value, :text}) do
+    to_string(value)
+  end
 
   defp read([
          {
@@ -318,5 +327,7 @@ defmodule BUPE.Parser do
        ]),
        do: ""
 
-  defp read(source, from: :element), do: Enum.map_join(source, " ", &read/1)
+  defp read(source, from: :element) do
+    Enum.map_join(source, "", &read/1)
+  end
 end
