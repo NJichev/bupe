@@ -304,12 +304,10 @@ defmodule BUPE.Parser do
   # Skip the title tag
   defp read({:xmlText, [{:title, _} | _rest], _, _language, _, :text}), do: ""
   defp read({:xmlText, [{:p, _} | _rest], _pos, _language, value, :text}) do
-    [to_string(value), "\n"]
+    [value, "\n"]
   end
 
-  defp read({:xmlText, _, _pos, _language, value, :text}) do
-    to_string(value)
-  end
+  defp read({:xmlText, _, _pos, _language, value, :text}), do: value
 
   defp read([
          {
