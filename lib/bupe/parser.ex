@@ -220,7 +220,8 @@ defmodule BUPE.Parser do
       p = String.to_charlist("#{path}/#{page.href}")
       [{^p, content}] = extract_files(epub, [p])
       {xml, _rest} = content |> :erlang.bitstring_to_list() |> :xmerl_scan.string()
-      Map.put(page, :content, read(xml))
+      html = read(xml)
+      Map.put(page, :content, html)
     end)
   end
 
@@ -300,11 +301,13 @@ defmodule BUPE.Parser do
     read(content, from: :element)
   end
 
-
   # Skip the title tag
   defp read({:xmlText, [{:title, _} | _rest], _, _language, _, :text}), do: ""
+  defp read({:xmlText, [{:p, _} | _rest], _pos, _language, value, :text}) when value in [" ", ""] do
+    "<p></p>"
+  end
   defp read({:xmlText, [{:p, _} | _rest], _pos, _language, value, :text}) do
-    [value, "\n"]
+    in_tag(value, "p")
   end
 
   defp read({:xmlText, _, _pos, _language, value, :text}), do: value
@@ -328,4 +331,11 @@ defmodule BUPE.Parser do
   defp read(source, from: :element) do
     Enum.map_join(source, "", &read/1)
   end
+
+  defp in_tag(content, tag) do
+    {o, c} = get_tag(tag)
+    [o, content, c]
+  end
+
+  defp get_tag(tag), do: {"<#{tag}>", "</#{tag}>"}
 end
