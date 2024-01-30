@@ -143,6 +143,7 @@ defmodule BUPE.Builder do
     |> generate_ncx()
     |> generate_nav()
     |> generate_title()
+    |> generate_logo()
     |> generate_content()
     |> generate_epub(name, options)
   end
@@ -232,6 +233,16 @@ defmodule BUPE.Builder do
     if config.details.cover do
       content = Templates.title_template(config.details)
       %{config | files: [{'OEBPS/title.xhtml', content} | config.files]}
+    else
+      config
+    end
+  end
+
+  defp generate_logo(config) do
+    if config.logo do
+      content = File.read!(config.logo)
+      path = "OEBPS/content" |> Path.join(Path.basename(config.logo)) |> String.to_charlist()
+      %{config | files: [{path, content} | config.files]}
     else
       config
     end
