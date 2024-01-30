@@ -239,9 +239,9 @@ defmodule BUPE.Builder do
   end
 
   defp generate_logo(config) do
-    if config.logo do
-      content = File.read!(config.logo)
-      path = "OEBPS/content" |> Path.join(Path.basename(config.logo)) |> String.to_charlist()
+    if config.details.logo do
+      content = File.read!(config.details.logo)
+      path = "OEBPS/content" |> Path.join(Path.basename(config.details.logo)) |> String.to_charlist()
       %{config | files: [{path, content} | config.files]}
     else
       config
