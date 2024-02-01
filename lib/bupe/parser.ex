@@ -328,6 +328,8 @@ defmodule BUPE.Parser do
        ]),
        do: ""
 
+  defp read({:xmlComment, _parents, _, _language, _comment}), do: ""
+
   defp read(source, from: :element) do
     Enum.map_join(source, "", &read/1)
   end
