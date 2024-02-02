@@ -77,7 +77,7 @@
     <% end %>
   </manifest>
   <spine toc="ncx">
-    <itemref idref="cover" linear="no" />
+    <itemref idref="cover"/>
     <%= if config.version == "3.0" do %>
     <itemref idref="nav" />
     <% end %>
