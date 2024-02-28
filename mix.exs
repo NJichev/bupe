@@ -29,7 +29,7 @@ defmodule BUPE.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:html_sanitize_ex], extra_applications: [:xmerl, :eex, :crypto]]
+    [extra_applications: [:xmerl, :eex, :crypto]]
   end
 
   def dialyzer do

@@ -17,9 +17,8 @@
     <% end %>
   </head>
   <body>
-    <h1><%= config.title %></h1>
     <%= if config.logo do %>
-      <div><img src="content/<%= Path.basename(config.logo) %>" alt="Logo"/></div>
+      <div class="logo" style="background-image: url('content/<%= Path.basename(config.logo) %>')"></div>
     <% end %>
   </body>
 </html>
