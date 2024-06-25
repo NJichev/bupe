@@ -212,12 +212,16 @@ defmodule BUPE.Parser do
   defp find_content(_, config, media_types) when is_list(media_types) do
     epub = Process.get(:epub)
     root_file = Process.get(:root_file) |> to_string()
-    [path, _root] = String.split(root_file, "/")
+    path =
+      case String.split(root_file, "/") do
+        [path, _file] -> path <> "/"
+        [_file] -> ""
+      end
 
     pages = config.pages
 
     Enum.map(pages, fn page ->
-      p = String.to_charlist("#{path}/#{page.href}")
+      p = String.to_charlist("#{path}#{page.href}")
       [{^p, content}] = extract_files(epub, [p])
       {xml, _rest} = content |> :erlang.bitstring_to_list() |> :xmerl_scan.string()
       html = read(xml)
